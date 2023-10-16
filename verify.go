@@ -17,12 +17,9 @@ import (
 	//"sync"
 )
 
-// Q:
-// Warns()尝试对不同层级的不同字段有不同的告警信息，如'x1.x2:required' 和'x1.x3:required' 有不同的告警信息
-// 自定义校验传递额外参数
-
 // 验证数据
 // param：传指针
+// args：第一个参数是校验场景，第二个参数是语言
 func Check(param interface{}, args ...string) (pass bool, warnInfo map[string]string, err error) {
 	var (
 		scene string // 验证场景

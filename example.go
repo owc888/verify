@@ -38,12 +38,13 @@ func (t Example) Warns() map[string]string {
 // 不同场景可以限定对不同的字段做校验
 func (t Example) Scenes() map[string]interface{} {
 	return map[string]interface{}{
+		// 数组形式
 		"create": []string{
 			"Title", "Works",
 		},
+		// map形式（未实现）
+		// 效果：当是“”时，用结构体里的binging，不为空时，覆盖binding
 		"update": map[string]string{
-			// 未实现，
-			// 当是“”时，用结构体里的binging，不为空时，覆盖binding
 			"ID":    "",
 			"Title": "len>10",
 			"Works": "len>2",
