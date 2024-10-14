@@ -176,10 +176,10 @@ func Check(param interface{}, args ...string) (pass bool, warnInfo map[string]st
 	}
 
 	// 整体性校验，一些上面的方法校验不出来的话，可以在这个方法里校验
-	if wholeCheckFunc := paramValue.MethodByName("WholeCheck"); wholeCheckFunc.IsValid() {
+	if checkWholeFunc := paramValue.MethodByName("CheckWhole"); checkWholeFunc.IsValid() {
 		paramList := []reflect.Value{reflect.ValueOf(scene)}
-		if warns, ok := wholeCheckFunc.Call(paramList)[0].Interface().(map[string]string); !ok {
-			err = errors.New("WholeCheck() returned parameter format error")
+		if warns, ok := checkWholeFunc.Call(paramList)[0].Interface().(map[string]string); !ok {
+			err = errors.New("CheckWhole() returned parameter format error")
 		} else {
 			for k, w := range warns {
 				if _, exist := warnInfo[k]; !exist {
