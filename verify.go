@@ -3,6 +3,7 @@ package verify
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
@@ -83,6 +84,7 @@ func Check(param interface{}, args ...string) (pass bool, warnInfo map[string]st
 	//validate.SetTagName("verify")
 
 	// 在校验器注册自定义的校验方法
+	checkWarnInfo := make(map[string]string)
 	for i := 0; i < paramType.NumMethod(); i++ {
 		method := paramType.Method(i)
 		if strIn(method.Name, []string{"Scenes", "Warns"}) {
@@ -99,6 +101,17 @@ func Check(param interface{}, args ...string) (pass bool, warnInfo map[string]st
 			})
 		case func(validator.FieldLevel) bool:
 			validate.RegisterValidation(method.Name, vef)
+		case func(reflect.Value) string:
+			// 自定义校验方法，返回值是string，表示校验失败时的提示信息，为空表示校验通过
+			// 再将次结果整合到validate中
+			validate.RegisterValidation(method.Name, func(vf validator.FieldLevel) bool {
+				msg := vef(vf.Field())
+				if msg != "" {
+					checkWarnInfo[method.Name] = msg
+					return false
+				}
+				return true
+			})
 		}
 		//if err := v.RegisterValidation(methodName, methodFunc); err != nil {
 		//	return err
@@ -129,6 +142,8 @@ func Check(param interface{}, args ...string) (pass bool, warnInfo map[string]st
 		}
 	}
 
+	fmt.Println(993)
+	fmt.Println(checkWarnInfo)
 	// 获取需要验证的字段，空的话就是全部
 	isVerifyPartial, verifyFields, err := getVerifyFields(scene, paramValue)
 	if err != nil {
@@ -164,16 +179,29 @@ func Check(param interface{}, args ...string) (pass bool, warnInfo map[string]st
 			key := namespace[strings.Index(namespace, ".")+1:]
 
 			errMsg := validateErr.Translate(trans)
-			// 上面将RegisterTagNameFunc()方法将一些关键词替换成field别名后，进一步将警告信息里的别名转换成需要的名称byname（Tag）
-			if bynames := getBynames(paramType.Elem(), validateErr.StructNamespace()); bynames != nil && len(bynames) > 0 {
-				for name, byname := range bynames {
-					reg := regexp.MustCompile(`(?i)` + name)
-					errMsg = reg.ReplaceAllString(errMsg, byname)
+			hasCheckWarn := false
+			for key, msg := range checkWarnInfo {
+				if strings.Contains(errMsg, key) {
+					errMsg = msg
+					hasCheckWarn = true
+					break
+				}
+			}
+			if !hasCheckWarn {
+				// 上面将RegisterTagNameFunc()方法将一些关键词替换成field别名后，进一步将警告信息里的别名转换成需要的名称byname（Tag）
+				if bynames := getBynames(paramType.Elem(), validateErr.StructNamespace()); bynames != nil && len(bynames) > 0 {
+					for name, byname := range bynames {
+						reg := regexp.MustCompile(`(?i)` + name)
+						errMsg = reg.ReplaceAllString(errMsg, byname)
+					}
 				}
 			}
 			warnInfo[key] = errMsg
 		}
 	}
+
+	fmt.Println(992)
+	fmt.Println(checkWarnInfo)
 
 	// 整体性校验，一些上面的方法校验不出来的话，可以在这个方法里校验
 	if checkWholeFunc := paramValue.MethodByName("CheckWhole"); checkWholeFunc.IsValid() {

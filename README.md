@@ -25,7 +25,7 @@
         Code string `json:"code" binding:"required" byname:"代码"`
     }
 
-3.个性化校验，在binding中写入自定义的校验方法名，同时编写好校验方法，有两种写法，主要是传参类型不同。沿用`github.com/go-playground/validator/v10`的功能。
+3.个性化校验，在binding中写入自定义的校验方法名，同时编写好校验方法，前两种写法，主要是传参类型不同。沿用`github.com/go-playground/validator/v10`的功能。第三种写法直接返回错误信息。
 
     // 有自定义校验标签时，一定要写同名校验方法
     func (t Example) CheckAge(rv reflect.Value) bool {
@@ -41,6 +41,14 @@
             return true
         }
         return false
+    }
+
+    // 第三种写法
+    func (t Example) CheckFirstName(rv reflect.Value) string {
+        if rv.String() == "first name" {
+            return "名字不能为“first name”"
+        }
+        return ""
     }
 
 4.可对结构体附加参数可设置在不同场景下，针对不同的参数进行校验。添加如下方法并返回正确的数据格式的数据即可。
@@ -62,7 +70,7 @@
 4.整体性的校验，当以上校验都不能满足要求时，可以在以下方法进行校验
 
     // 整体性校验，一些上面的方法校验不出来的时候，都可以在这个方法里校验
-    func (t Example) WholeCheck(scene string) map[string]string {
+    func (t Example) CheckWhole(scene string) map[string]string {
         warns := make(map[string]string)
         if scene == "delete" && t.ID != 1 {
             warns["id"] = "id不能等于1"

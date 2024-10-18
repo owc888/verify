@@ -21,7 +21,7 @@ type Work struct {
 }
 
 type Author struct {
-	FirstName string `json:"first_name" byname:"姓"`
+	FirstName string `json:"first_name" binding:"CheckFirstName" byname:"姓"`
 	LastName  string `json:"last_name"  byname:"名"`
 	Age       string `json:"age" binding:"CheckAge" byname:"年龄"`
 }
@@ -71,8 +71,16 @@ func (t Example) CheckAge2(vf validator.FieldLevel) bool {
 	return false
 }
 
+// 第三种写法
+func (t Example) CheckFirstName(rv reflect.Value) string {
+	if rv.String() == "first name" {
+		return "名字不能为“first name”"
+	}
+	return ""
+}
+
 // 整体性校验，一些上面的方法校验不出来的时候，都可以在这个方法里校验
-func (t Example) WholeCheck(scene string) map[string]string {
+func (t Example) CheckWhole(scene string) map[string]string {
 	warns := make(map[string]string)
 	if scene == "delete" && t.ID != 1 {
 		warns["id"] = "id不能等于1"
